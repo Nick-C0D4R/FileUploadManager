@@ -1,4 +1,5 @@
-﻿using System.Net.Mail;
+﻿using System.Net.Http;
+using System.Net.Mail;
 
 namespace FileUploadManager.Data
 {
@@ -6,11 +7,17 @@ namespace FileUploadManager.Data
     {
         private SmtpClient _client;
 
-        public EmailService(SmtpClient client) => _client = client;
-
-        public void Send(EmailLetter letter)
+        public EmailService(SmtpClient client)
         {
-            _client.SendAsync(letter.From, letter.To, "Successful upload", letter.Message, null);
+            _client = client;
+            _client.UseDefaultCredentials = false;
+            _client.Credentials = new System.Net.NetworkCredential("File.upload.6.11@gmail.com", "pwhmrldpaqydqflu");
+            _client.EnableSsl = true;
+        }
+
+        public void Send(MailMessage letter)
+        {
+            _client.Send(letter);
         }
     }
 }

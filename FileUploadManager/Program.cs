@@ -2,6 +2,7 @@ using Azure.Storage.Blobs;
 using FileUploadManager.Data;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using System.Net.Mail;
 
 namespace FileUploadManager
 {
@@ -31,6 +32,11 @@ namespace FileUploadManager
                 container.CreateIfNotExists();
 
                 return container;
+            });
+
+            builder.Services.AddScoped(options =>
+            {
+                return new SmtpClient("smtp.gmail.com", 587);
             });
 
             builder.Services.AddSingleton(options =>

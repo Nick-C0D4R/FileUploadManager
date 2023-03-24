@@ -18,7 +18,10 @@ namespace FileUploadManager.Data
             string connectionString = config.GetSection("AzureSettings")["ConnectionString"];
             string storageName = config.GetSection("AzureSettings")["BlobName"];
             BlobClient blobClient = _client.GetBlobClient(fileName);
-            await blobClient.UploadAsync(file.OpenReadStream());
+            if(!await blobClient.ExistsAsync())
+            {
+                await blobClient.UploadAsync(file.OpenReadStream());
+            }
             return true;
         }
     }
