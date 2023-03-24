@@ -1,0 +1,28 @@
+﻿@page "/"
+@namespace FileUploadManager.Pages
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@{
+    Layout = "_Layout";
+}
+
+<component type="typeof(App)" render-mode="ServerPrerendered" />
+
+
+<script>
+    function clearError(){
+        const errorSpan = document.getElementById("error-span");
+        const submitButton = document.getElementById('submit-button');
+        submitButton.disabled = false;
+        errorSpan.style.color = "";
+        errorSpan.innerText = "";
+    }
+
+    function handleError(){
+        const errorSpan = document.getElementById("error-span");
+        const submitButton = document.getElementById('submit-button');
+        submitButton.disabled = true;
+        errorSpan.style.color = "red";
+        errorSpan.innerText = "Invalid extension: Only .docx fles are allowed";
+
+    }
+</script>
