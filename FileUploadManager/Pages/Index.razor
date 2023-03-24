@@ -1,0 +1,65 @@
+﻿@page "/"
+@using Azure.Storage.Blobs;
+@using FileUploadManager.Data;
+@inject IJSRuntime JsRuntime
+
+<PageTitle>Index</PageTitle>
+
+@*<InputText />*@   
+
+<div class="d-flex justify-content-center">
+    <EditForm Model="@model" OnSubmit="@LoadFile">
+        <div>
+            <InputFile OnChange="@ChangeFile" id="file" class="form-control" @bind-Value="@model.File" />
+            <span id="error-span"></span>
+        </div>
+        <div>
+            <InputText class="form-control" placeholder="Enter your e-mail" @bind-Value="@model.Email" />
+        </div>
+        <div>
+            <input type="submit" value="Submit" id="submit-button" class="form-control btn btn-md btn-warning" />
+        </div>
+    </EditForm>
+</div>
+
+
+
+
+
+
+@code{
+    private UploadModel model = new();
+    private string fileName;
+
+    private async void ChangeFile(InputFileChangeEventArgs e)
+    {
+        await JsRuntime.InvokeVoidAsync("clearError");
+        fileName = e.File.Name;
+        string extension = new FileInfo(fileName).Extension;
+        if (extension != ".docx")
+        {
+            await JsRuntime.InvokeVoidAsync("handleError");
+        }
+        model.File = e.File;
+    }
+
+    public async void LoadFile()
+    {
+        IConfigurationRoot config = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
+        string connectionString = config.GetSection("AzureSettings")["ConnectionString"];
+        string storageName = config.GetSection("AzureSettings")["BlobName"];
+        BlobServiceClient serviceClient = new BlobServiceClient(connectionString);
+        BlobContainerClient container = serviceClient.GetBlobContainerClient(storageName);
+        if(!await container.ExistsAsync())
+        {
+            container = await serviceClient.CreateBlobContainerAsync(storageName);
+        }
+        await container.CreateIfNotExistsAsync();
+        FileUploadService service = new FileUploadService(container);
+
+        if(await service.Load(fileName, model.File))
+        {
+            //email about success
+        }
+    }
+}
