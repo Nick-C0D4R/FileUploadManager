@@ -1,6 +1,7 @@
 ﻿@page "/"
 @using Azure.Storage.Blobs;
 @using FileUploadManager.Data;
+@using System.Net.Mail;
 @inject IJSRuntime JsRuntime
 
 <PageTitle>Index</PageTitle>
@@ -29,18 +30,17 @@
 
 @code{
     private UploadModel model = new();
-    private string fileName;
 
     private async void ChangeFile(InputFileChangeEventArgs e)
     {
+        model.File = e.File;
         await JsRuntime.InvokeVoidAsync("clearError");
-        fileName = e.File.Name;
-        string extension = new FileInfo(fileName).Extension;
+        string extension = new FileInfo(model.File.Name).Extension;
         if (extension != ".docx")
         {
             await JsRuntime.InvokeVoidAsync("handleError");
         }
-        model.File = e.File;
+
     }
 
     public async void LoadFile()
@@ -48,6 +48,7 @@
         IConfigurationRoot config = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
         string connectionString = config.GetSection("AzureSettings")["ConnectionString"];
         string storageName = config.GetSection("AzureSettings")["BlobName"];
+        string baseUrl = config.GetSection("AzureSettings")["URL"];
         BlobServiceClient serviceClient = new BlobServiceClient(connectionString);
         BlobContainerClient container = serviceClient.GetBlobContainerClient(storageName);
         if(!await container.ExistsAsync())
@@ -57,9 +58,24 @@
         await container.CreateIfNotExistsAsync();
         FileUploadService service = new FileUploadService(container);
 
-        if(await service.Load(fileName, model.File))
+        if(await service.Load(model.File.Name, model.File))
         {
-            //email about success
+            EmailLetter letter = new EmailLetter
+            {
+                From = "file.upload.test@gmail.com",
+                To = model.Email,
+                Message = $@"Your .docx file was added to container successfully. To check it, you can follow the link 
+                          https://palanyaca.blob.core.windows.net/{storageName}/{model.File.Name}"
+            };
+            EmailService emailService = new EmailService(new System.Net.Mail.SmtpClient(letter.From));
+            try
+            {
+                emailService.Send(letter);
+            }
+            catch(SmtpException ex)
+            {
+                await JsRuntime.InvokeVoidAsync("handleEmailFailure", ex.Message);
+            }
         }
     }
 }
