@@ -55,30 +55,9 @@
         {
             container = await serviceClient.CreateBlobContainerAsync(storageName);
         }
-        await container.CreateIfNotExistsAsync();
+        //await container.CreateIfNotExistsAsync();
         FileUploadService service = new FileUploadService(container);
 
-        if(await service.Load(model.File.Name, model.File))
-        {
-
-            EmailService emailService = new EmailService(new System.Net.Mail.SmtpClient("smtp.gmail.com", 587));
-
-            using (MailMessage letter = new MailMessage())
-            {
-                letter.From = new MailAddress("File.upload.6.11@gmail.com");
-                letter.To.Add(model.Email);
-                letter.Subject = "File upload successfuly";
-                letter.Body = $@"Your .docx file was added to container successfully. To check it, you can follow the link
-                          https://palanyaca.blob.core.windows.net/{storageName}/{model.File.Name}";
-                try
-                {
-                    emailService.Send(letter);
-                }
-                catch (SmtpException ex)
-                {
-                    await JsRuntime.InvokeVoidAsync("handleEmailFailure", ex.Message);
-                }
-            }
-        }
+        await service.Load($"[{model.Email}]{model.File.Name}", model.File);
     }
 }
